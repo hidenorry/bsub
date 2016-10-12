@@ -20,14 +20,13 @@
 (define (add-extension str)
   (string-append str ".sh"))
 
-(define (mkinput files :key (nodes 1) (host bqua) (ppn 1) (nice 10))
+(define (mkinput file :key (nodes 1) (host bqua) (ppn 1) (nice 10))
   (let (
         (nodes nodes)
         (host host)
         (ppn ppn)
         (nice nice)
         (pwd (current-directory))
-        (files (list2string files))
         )
     #"#!/bin/sh 
 #PBS -l nodes=~|nodes|:~|host|:ppn=~|ppn|
@@ -46,7 +45,7 @@ cleanup()
 
 #
 #trap \"cleanup /work/${USER}/${MOL}.$$ \" 1 2 3 15
-for MOL in ~|files|
+for MOL in ~|file|
 do
 MOL=`basename $MOL`
 WORK=/work/${USER}/${MOL}.$$
@@ -87,17 +86,27 @@ exit 0
   ;;(mkinput files :key (nodes 1) (host bqua) (ppn 1) (nice 10))
   (let-args (cdr args)
       (
-       (nodes  "n|nodes=s" "1")
-       (host   "h|host=s"  "bqua")
-       (ppn    "p|ppn=s"   "4")
-       (nice   "nice=s"    "10")
+       (sept   "s|sept"    #f)     ;; submit jobs files separately
+       (nodes  "n|nodes=s" "1")    ;; the number of nodes
+       (host   "h|host=s"  "bqua") ;; host name
+       (ppn    "p|ppn=s"   "4")    ;; the number of core
+       (nice   "nice=s"    "10")   ;; the number of nice  normal:10  highest:-20 lowest:19
        . restargs
        )
-    (let ((ofile (add-extension (car restargs))))
-      (write-to-file
-       (mkinput restargs :nodes nodes :host host :ppn ppn :nice nice)
-       ofile)
-     (submit-file ofile))
+    (if sept
+        (for-each
+         (lambda (gfile)
+           (let1 ofile (add-extension gfile)
+             (write-to-file
+              (mkinput gfile :nodes nodes :host host :ppn ppn :nice nice)
+              ofile)
+            (submit-file ofile)))
+         restargs)
+        (let ((ofile (add-extension (car restargs))))
+          (write-to-file
+           (mkinput (list2string restargs) :nodes nodes :host host :ppn ppn :nice nice)
+           ofile)
+          (submit-file ofile)))
     ))
 
 
