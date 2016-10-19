@@ -61,7 +61,7 @@ export LANG=C
 export GAUSS_SCRDIR=$WORK
 #
 #sed 's/NProcShared=4/NProcShared=~|ppn|/g' ${DATAHOME}/${MOL}.inp > ${DATAHOME}/${MOL}.gjf
-echo 'NProcShared=~|ppn|   >  ${DATAHOME}/${MOL}.gjf
+echo '%NProcShared=~|ppn|'  >  ${DATAHOME}/${MOL}.gjf
 cat ${DATAHOME}/${MOL}.inp >> ${DATAHOME}/${MOL}.gjf
 
 if [ ! -d $WORK ]; then mkdir -p $WORK; fi
